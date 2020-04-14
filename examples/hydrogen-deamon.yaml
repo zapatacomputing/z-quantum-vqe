@@ -118,7 +118,7 @@ spec:
           - reference: rhf
           - nthreads: "4"
           - save-hamiltonian: 'True' # Boolean values must be put in quotes!
-          - resources: [z-quantum-core, qe-psi4, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, qe-psi4]
           - docker-image: qe-psi4
           - docker-tag: latest
     - - name: transform-hamiltonian
@@ -143,7 +143,7 @@ spec:
           - transformation: Jordan-Wigner
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
-          - resources: [z-quantum-core, z-quantum-vqe, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-vqe]
     - - name: generate-random-ansatz-params
         template: generate-random-ansatz-params
         arguments:
@@ -247,7 +247,7 @@ spec:
           - params:
               from: '{{steps.get-circuit-parameters.outputs.artifacts.argument-values}}'
           parameters:
-          - resources: [z-quantum-core, z-quantum-vqe, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-vqe]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
           

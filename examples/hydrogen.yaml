@@ -56,7 +56,7 @@ spec:
     parameters:
     - s3-bucket: quantum-engine
     - s3-key: projects/examples/hydrogen/data
-    - docker-image: 'open_pack_default'
+    - docker-image: 'z-quantum-default'
     - docker-tag: 'latest'
 
   templates:
@@ -115,7 +115,7 @@ spec:
           - reference: rhf
           - nthreads: "4"
           - save-hamiltonian: 'True' # Boolean values must be put in quotes!
-          - resources: [z-quantum-core, qe-psi4, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, qe-psi4]
           - docker-image: qe-psi4
           - docker-tag: latest
     - - name: transform-hamiltonian
@@ -126,7 +126,7 @@ spec:
               from: "{{steps.run-psi4.outputs.artifacts.hamiltonian}}"
           parameters:
           - transformation: Jordan-Wigner
-          - resources: [qe-openfermion, z-quantum-core]
+          - resources: [z-quantum-core, qe-openfermion]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
     - - name: build-vqe-circuit-template
@@ -138,7 +138,7 @@ spec:
           - n-beta: "{{steps.run-psi4.outputs.parameters.n-beta}}"
           - n-mo: "{{steps.run-psi4.outputs.parameters.n-mo}}"
           - transformation: Jordan-Wigner
-          - resources: [z-quantum-core, z-quantum-vqe, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-vqe]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
     - - name: generate-random-ansatz-params
@@ -157,10 +157,9 @@ spec:
         template: optimize-variational-circuit
         arguments:
           parameters:
-          - backend-specs: "{'module_name': 'qe.forest.simulator', 'function_name': 'ForestSimulator', 'device_name': 'wavefunction-simulator'}"
-          # - optimizer-specs: "{'module_name': 'zquantum.optimizers.grid_search', 'function_name': 'GridSearchOptimizer'}"
+          - backend-specs: "{'module_name': 'qeforest.simulator', 'function_name': 'ForestSimulator', 'device_name': 'wavefunction-simulator'}"
           - optimizer-specs: "{'module_name': 'zquantum.optimizers.scipy_optimizer', 'function_name': 'ScipyOptimizer', 'method': 'L-BFGS-B'}"
-          - resources: [z-quantum-core, z-quantum-optimizers, qe-forest, z-quantum-vqe, qe-openfermion]
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-forest, z-quantum-vqe]
           - docker-image: "{{workflow.parameters.docker-image}}"
           - docker-tag: "{{workflow.parameters.docker-tag}}"
           - memory: 2048Mi
