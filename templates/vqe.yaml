@@ -27,9 +27,9 @@ spec:
 
             ansatz = build_circuit_template(
               ansatz_type='{{inputs.parameters.ansatz-type}}',
-              n_mo=1,
-              n_alpha=1,
-              n_beta=1,
+              n_mo={{n-mo}},
+              n_alpha={{n-alpha}},
+              n_beta={{n-beta}},
               transformation='Jordan-Wigner')
 
             save_circuit_template(ansatz, 'ansatz.json')
