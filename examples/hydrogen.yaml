@@ -1,0 +1,173 @@
+ZapOSApiVersion: v1alpha1
+kind: Workflow
+
+resources:
+- name: diatomic-molecule
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/diatomic-molecule-example.git"
+    branch: "master"
+- name: z-quantum-core
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-core.git"
+    branch: "master"
+- name: qe-openfermion
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-openfermion.git"
+    branch: "master"
+- name: qe-psi4
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-psi4.git"
+    branch: "master"
+- name: z-quantum-vqe
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-vqe.git"
+    branch: "master"
+- name: z-quantum-optimizers
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
+    branch: "master"
+- name: qe-forest
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-forest.git"
+    branch: "master"
+- name: qe-qhipster
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-qhipster.git"
+    branch: "master"
+
+
+# Specify the prefix to use when generating names of workflow executions.
+metadata:
+  generateName: h2-example-
+
+# The actual workflow specification
+spec:
+
+  entrypoint: basis-set-loop
+  arguments:
+    parameters:
+    - s3-bucket: quantum-engine
+    - s3-key: projects/examples/hydrogen/data
+    - docker-image: 'open_pack_default'
+    - docker-tag: 'latest'
+
+  templates:
+
+  - name: basis-set-loop
+    steps:
+    - - name: bond-length-loop
+        template: bond-length-loop
+        arguments:
+          parameters:
+          - basis: '{{item}}' # Note that quotes are needed here because of the curly braces
+        withItems:
+        - STO-3G
+        # - 6-31G
+        # - 6-311G
+
+  - name: bond-length-loop
+    inputs:
+      parameters:
+      - name: basis
+    steps:
+    - - name: run-h2
+        template: run-h2
+        arguments:
+          parameters:
+          - basis: '{{inputs.parameters.basis}}'
+          - bond-length: '{{item}}'
+        withItems: [0.60] #, 0.70, 0.80]
+
+  - name: run-h2
+    inputs:
+      parameters:
+      - name: basis
+      - name: bond-length
+    steps:
+    - - name: create-molecule
+        template: create-diatomic-molecule
+        arguments:
+          parameters:
+          - species1: H
+          - species2: H
+          - bond-length: '{{inputs.parameters.bond-length}}'
+          - resources: [diatomic-molecule, z-quantum-core]
+          - docker-image: open_pack_psi4
+          - docker-tag: latest
+
+    - - name: run-psi4
+        template: run-psi4
+        arguments:
+          artifacts:
+          - geometry:
+              from: '{{steps.create-molecule.outputs.artifacts.geometry}}'
+          parameters:
+          - basis: '{{inputs.parameters.basis}}'
+          - method: scf # ccsd(t)
+          - reference: rhf
+          - nthreads: "4"
+          - save-hamiltonian: 'True' # Boolean values must be put in quotes!
+          - resources: [z-quantum-core, qe-psi4, qe-openfermion]
+          - docker-image: qe-psi4
+          - docker-tag: latest
+    - - name: transform-hamiltonian
+        template: transform-interaction-operator
+        arguments:
+          artifacts:
+          - input-op:
+              from: "{{steps.run-psi4.outputs.artifacts.hamiltonian}}"
+          parameters:
+          - transformation: Jordan-Wigner
+          - resources: [qe-openfermion, z-quantum-core]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+    - - name: build-vqe-circuit-template
+        template: build-vqe-circuit-template
+        arguments:
+          parameters:
+          - ansatz-type: singlet UCCSD
+          - n-alpha: "{{steps.run-psi4.outputs.parameters.n-alpha}}"
+          - n-beta: "{{steps.run-psi4.outputs.parameters.n-beta}}"
+          - n-mo: "{{steps.run-psi4.outputs.parameters.n-mo}}"
+          - transformation: Jordan-Wigner
+          - resources: [z-quantum-core, z-quantum-vqe, qe-openfermion]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+    - - name: generate-random-ansatz-params
+        template: generate-random-ansatz-params
+        arguments:
+          parameters:
+          - min-val: "-0.01"
+          - max-val: "0.01"
+          - resources: [z-quantum-core]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+          artifacts:
+          - ansatz:
+              from: "{{steps.build-vqe-circuit-template.outputs.artifacts.ansatz}}"
+    - - name: optimize-variational-circuit
+        template: optimize-variational-circuit
+        arguments:
+          parameters:
+          - backend-specs: "{'module_name': 'qe.forest.simulator', 'function_name': 'ForestSimulator', 'device_name': 'wavefunction-simulator'}"
+          # - optimizer-specs: "{'module_name': 'zquantum.optimizers.grid_search', 'function_name': 'GridSearchOptimizer'}"
+          - optimizer-specs: "{'module_name': 'zquantum.optimizers.scipy_optimizer', 'function_name': 'ScipyOptimizer', 'method': 'L-BFGS-B'}"
+          - resources: [z-quantum-core, z-quantum-optimizers, qe-forest, z-quantum-vqe, qe-openfermion]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+          - memory: 2048Mi
+          artifacts:
+          - ansatz:
+              from: "{{steps.build-vqe-circuit-template.outputs.artifacts.ansatz}}"
+          - qubit-operator:
+              from: "{{steps.transform-hamiltonian.outputs.artifacts.transformed-op}}"
+          - initial-parameters:
+              from: "{{steps.generate-random-ansatz-params.outputs.artifacts.params}}"
