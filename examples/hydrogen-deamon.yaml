@@ -11,12 +11,12 @@ resources:
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/z-quantum-core.git"
-    branch: "broken-optimization-loop"
+    branch: "master"
 - name: qe-openfermion
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-openfermion.git"
-    branch: "broken-optimization-loop"
+    branch: "master"
 - name: qe-psi4
   type: git
   parameters:
@@ -55,7 +55,7 @@ spec:
     - s3-key: projects/examples/testing/optimizer
     - evaluation-docker-image: 'open_pack_qhipster'
     - evaluation-docker-tag: 'latest'
-    - docker-image: 'open_pack_default'
+    - docker-image: 'z-quantum-default'
     - docker-tag: 'latest'
 
 
