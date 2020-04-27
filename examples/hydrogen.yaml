@@ -84,7 +84,8 @@ spec:
           parameters:
           - basis: '{{inputs.parameters.basis}}'
           - bond-length: '{{item}}'
-        withItems: [0.60] #, 0.70, 0.80]
+        withItems: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+        #withItems: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 2.5, 3.0]
 
   - name: run-h2
     inputs:
@@ -100,8 +101,8 @@ spec:
           - species2: H
           - bond-length: '{{inputs.parameters.bond-length}}'
           - resources: [diatomic-molecule, z-quantum-core]
-          - docker-image: open_pack_psi4
-          - docker-tag: latest
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
 
     - - name: run-psi4
         template: run-psi4
