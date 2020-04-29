@@ -5,7 +5,7 @@ resources:
 - name: diatomic-molecule
   type: git
   parameters:
-    url: "git@github.com:zapatacomputing/diatomic-molecule-example.git"
+    url: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
     branch: "master"
 - name: z-quantum-core
   type: git
@@ -70,8 +70,8 @@ spec:
           - basis: '{{item}}' # Note that quotes are needed here because of the curly braces
         withItems:
         - STO-3G
-        # - 6-31G
-        # - 6-311G
+        - 6-31G
+        - 6-311G
 
   - name: bond-length-loop
     inputs:
@@ -85,7 +85,6 @@ spec:
           - basis: '{{inputs.parameters.basis}}'
           - bond-length: '{{item}}'
         withItems: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-        #withItems: [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 2.0, 2.5, 3.0]
 
   - name: run-h2
     inputs:
@@ -158,11 +157,12 @@ spec:
         template: optimize-variational-circuit
         arguments:
           parameters:
-          - backend-specs: "{'module_name': 'qeforest.simulator', 'function_name': 'ForestSimulator', 'device_name': 'wavefunction-simulator'}"
+          # - backend-specs: "{'module_name': 'qeforest.simulator', 'function_name': 'ForestSimulator', 'device_name': 'wavefunction-simulator'}"
+          - backend-specs: "{'module_name': 'qeqhipster.simulator', 'function_name': 'QHipsterSimulator'}"
           - optimizer-specs: "{'module_name': 'zquantum.optimizers.scipy_optimizer', 'function_name': 'ScipyOptimizer', 'method': 'L-BFGS-B'}"
-          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-forest, z-quantum-vqe]
-          - docker-image: "{{workflow.parameters.docker-image}}"
-          - docker-tag: "{{workflow.parameters.docker-tag}}"
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-vqe]
+          - docker-image: qe-qhipster
+          - docker-tag: latest
           - memory: 2048Mi
           artifacts:
           - ansatz:
