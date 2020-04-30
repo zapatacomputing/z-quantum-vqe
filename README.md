@@ -58,3 +58,4 @@ You can find the development guidelines in the [`z-quantum-core` repository](htt
 ### Running tests
 
 In order to run tests please run `pytest .` from the main directory.
+
