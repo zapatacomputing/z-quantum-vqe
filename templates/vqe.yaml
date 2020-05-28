@@ -11,7 +11,7 @@ spec:
       - name: n-mo
       - name: ansatz-type
       - name: transformation
-        deafault: 'Jordan-Wigner'
+        default: 'Jordan-Wigner'
       - name: spin-ordering
         default: 'interleaved'
       - name: command
