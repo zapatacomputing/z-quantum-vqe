@@ -1,0 +1,162 @@
+ZapOSApiVersion: v1alpha1
+kind: Workflow
+
+resources:
+- name: diatomic-molecule
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
+    branch: "dev"
+- name: z-quantum-core
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-core.git"
+    branch: "dev"
+- name: qe-openfermion
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-openfermion.git"
+    branch: "dev"
+- name: qe-psi4
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-psi4.git"
+    branch: "dev"
+- name: z-quantum-vqe
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-vqe.git"
+    branch: "dev"
+- name: z-quantum-optimizers
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
+    branch: "dev"
+- name: qe-qiskit
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-qiskit.git"
+    branch: "dev"
+
+
+# Specify the prefix to use when generating names of workflow executions.
+metadata:
+  generateName: h2-example-
+
+# The actual workflow specification
+spec:
+
+  entrypoint: run-h2
+  arguments:
+    parameters:
+    - basis: STO-3G
+    - bond-length: '0.7'
+    - s3-bucket: quantum-engine
+    - s3-key: projects/examples/hydrogen/data
+    - docker-image: 'z-quantum-default'
+    - docker-tag: 'latest'
+
+  templates:
+
+  - name: run-h2
+    steps:
+    - - name: create-molecule
+        template: create-diatomic-molecule
+        arguments:
+          parameters:
+          - species1: H
+          - species2: H
+          - bond-length: '{{workflow.parameters.bond-length}}'
+          - resources: [z-quantum-core, diatomic-molecule]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+
+    - - name: run-psi4
+        template: run-psi4
+        arguments:
+          artifacts:
+          - geometry:
+              from: '{{steps.create-molecule.outputs.artifacts.geometry}}'
+          parameters:
+          - basis: '{{workflow.parameters.basis}}'
+          - method: scf # ccsd(t)
+          - reference: rhf
+          - nthreads: "4"
+          - save-hamiltonian: 'True' # Boolean values must be put in quotes!
+          - resources: [z-quantum-core, qe-openfermion, qe-psi4]
+          - docker-image: qe-psi4
+          - docker-tag: latest
+
+      - name: run-psi4-coupled-cluster
+        template: run-psi4
+        arguments:
+          artifacts:
+          - geometry:
+              from: '{{steps.create-molecule.outputs.artifacts.geometry}}'
+          parameters:
+          - basis: '{{workflow.parameters.basis}}'
+          - method: ccsd(t)
+          - reference: rhf
+          - nthreads: "4"
+          - save-hamiltonian: 'True' # Boolean values must be put in quotes!
+          - resources: [z-quantum-core, qe-openfermion, qe-psi4]
+          - docker-image: qe-psi4
+          - docker-tag: latest
+
+    - - name: transform-hamiltonian
+        template: transform-interaction-operator
+        arguments:
+          artifacts:
+          - input-op:
+              from: "{{steps.run-psi4.outputs.artifacts.hamiltonian}}"
+          parameters:
+          - transformation: Jordan-Wigner
+          - resources: [z-quantum-core, qe-openfermion]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+
+    - - name: generate-random-ansatz-params
+        template: generate-random-ansatz-params
+        arguments:
+          parameters:
+          - min-val: "-0.01"
+          - max-val: "0.01"
+          - resources: [z-quantum-core, z-quantum-vqe]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: "{{workflow.parameters.docker-tag}}"
+          - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd',
+              'function_name': 'SingletUCCSDAnsatz',
+              'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}},
+              'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}},
+              'transformation': 'Jordan-Wigner'}"
+
+    - - name: optimize-variational-circuit
+        template: optimize-variational-circuit
+        arguments:
+          parameters:
+          - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd',
+              'function_name': 'SingletUCCSDAnsatz',
+              'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}},
+              'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}},
+              'transformation': 'Jordan-Wigner'}"
+          - backend-specs: "{'module_name': 'qeqiskit.backend',
+              'function_name': 'QiskitBackend',
+              'device_name': 'ibmq_ourense',
+              'n_samples': 8192,
+              'readout_correction': True,
+              'api_token': '<INSERT IBMQ API TOKEN HERE>'}"
+          - optimizer-specs: "{'module_name': 'zquantum.optimizers.cma_es_optimizer', 'function_name': 'CMAESOptimizer', 'options': {'sigma_0': 0.2, 'maxiter': 20, 'popsize': 12}}"
+          - cost-function-specs: "{
+            'module_name': 'zquantum.core.cost_function',
+            'function_name': 'AnsatzBasedCostFunction',
+            'estimator-specs': { 'module_name': 'zquantum.core.estimator', 'function_name': 'BasicEstimator' }
+            }"
+          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qiskit, z-quantum-vqe]
+          - docker-image: "{{workflow.parameters.docker-image}}"
+          - docker-tag: latest
+          - memory: 2048Mi
+          artifacts:
+          - qubit-operator:
+              from: "{{steps.transform-hamiltonian.outputs.artifacts.transformed-op}}"
+          - initial-parameters:
+              from: "{{steps.generate-random-ansatz-params.outputs.artifacts.params}}"
