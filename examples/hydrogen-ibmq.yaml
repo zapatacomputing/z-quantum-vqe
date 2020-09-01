@@ -32,16 +32,11 @@ resources:
   parameters:
     url: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
     branch: "dev"
-- name: qe-forest
-  type: git
-  parameters:
-    url: "git@github.com:zapatacomputing/qe-forest.git"
-    branch: "dev"
 - name: qe-qiskit
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-qiskit.git"
-    branch: "ibm-vqf"
+    branch: "dev"
 
 
 # Specify the prefix to use when generating names of workflow executions.
