@@ -1,0 +1,39 @@
+spec:
+  templates:
+
+  # Build a circuit template for an ansatz
+  - name: build-vqe-circuit-template
+    parent: generic-task
+    inputs:
+      parameters:
+      - name: n-alpha
+      - name: n-beta
+      - name: n-mo
+      - name: ansatz-type
+      - name: transformation
+        default: 'Jordan-Wigner'
+      - name: spin-ordering
+        default: 'interleaved'
+      - name: command
+        value: python3 main_script.py
+      artifacts:
+      - name: main-script
+        path: /app/main_script.py
+        raw:
+          data: |
+            import os
+            from zquantum.vqe.utils import build_circuit_template
+            from zquantum.core.circuit import save_circuit_template
+
+            ansatz = build_circuit_template(
+              ansatz_type='{{inputs.parameters.ansatz-type}}',
+              n_mo={{inputs.parameters.n-mo}},
+              n_alpha={{inputs.parameters.n-alpha}},
+              n_beta={{inputs.parameters.n-beta}},
+              transformation='Jordan-Wigner')
+
+            save_circuit_template(ansatz, 'ansatz.json')
+    outputs:
+      artifacts:
+      - name: ansatz
+        path: /app/ansatz.json
