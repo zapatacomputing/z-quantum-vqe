@@ -46,10 +46,10 @@ steps:
   config:
     runtime:
       type: python3
-      imports: [z-quantum-core, diatomic-molecule]
+      imports: [diatomic-molecule]
       parameters:
-        file: TODO
-        function: TODO
+        file: diatomic-molecule/tasks/diatomic_molecule_tasks.py
+        function: create_diatomic_molecule
     resources:
       cpu: "1000m"
       memory: "1Gi"
@@ -62,8 +62,8 @@ steps:
     - bond-lenght: 0.7
       type: float
   outputs:
-    - name: geometry
-      type: molecule-geometry
+    - name: molecule
+      type: molecular-geometry
 - name: run-psi4
   passed: [create-molecule]
   config:
@@ -78,8 +78,8 @@ steps:
       memory: "1Gi"
       disk: "10Gi"
   inputs:
-    - geometry: ((create-molecule.geometry))
-      type: molecule-geometry
+    - geometry: ((create-molecule.molecule))
+      type: molecular-geometry
     - basis: "STO-3G"
       type: string
     - method: "scf"
@@ -185,7 +185,7 @@ steps:
 
 
 types:
-  - molecule-geometry
+  - molecular-geometry
   - hamiltonian-operator
   - ansatz-params
   - optimization-results
