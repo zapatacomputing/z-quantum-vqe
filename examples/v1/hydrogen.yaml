@@ -34,7 +34,7 @@ imports:
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-psi4.git"
-    branch: "workfow-v1"
+    branch: "dev"
 - name: qe-qhipster
   type: git
   parameters:
@@ -71,8 +71,8 @@ steps:
       language: python3
       imports: [z-quantum-core, qe-openfermion, qe-psi4]
       parameters:
-        file: TODO
-        function: TODO
+        file: qe-psi4/steps/psi4.py
+        function: run_psi4_step
     resources:
       cpu: "1000m"
       memory: "1Gi"
@@ -100,8 +100,8 @@ steps:
       language: python3
       imports: [z-quantum-core, qe-openfermion]
       parameters:
-        file: TODO
-        function: TODO
+        file: qe-openfermion/steps/transforms.py
+        function: transform_interaction_operator
     resources:
       cpu: "1000m"
       memory: "1Gi"
