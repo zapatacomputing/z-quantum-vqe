@@ -48,7 +48,7 @@ steps:
       language: python3
       imports: [diatomic-molecule]
       parameters:
-        file: diatomic-molecule/tasks/diatomic_molecule_tasks.py
+        file: diatomic-molecule/steps/diatomic_molecule.py
         function: create_diatomic_molecule
     resources:
       cpu: "1000m"
@@ -120,7 +120,7 @@ steps:
       language: python3
       imports: [z-quantum-core, qe-openfermion, z-quantum-vqe]
       parameters:
-        file: z-quantum-core/tasks/circuit_tasks.py
+        file: z-quantum-core/steps/circuit.py
         function: generate_random_ansatz_params
     resources:
       cpu: "1000m"
