@@ -14,7 +14,7 @@ imports:
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-openfermion.git"
-    branch: "workflow-v1"
+    branch: "v1-revisions"
 - name: z-quantum-vqe
   type: git
   parameters:
@@ -45,7 +45,7 @@ steps:
 - name: create-molecule
   config:
     runtime:
-      type: python3
+      language: python3
       imports: [diatomic-molecule]
       parameters:
         file: diatomic-molecule/tasks/diatomic_molecule_tasks.py
@@ -68,7 +68,7 @@ steps:
   passed: [create-molecule]
   config:
     runtime:
-      type: python3
+      language: python3
       imports: [z-quantum-core, qe-openfermion, qe-psi4]
       parameters:
         file: TODO
@@ -97,7 +97,7 @@ steps:
   passed: [run-psi4]
   config:
     runtime:
-      type: python3
+      language: python3
       imports: [z-quantum-core, qe-openfermion]
       parameters:
         file: TODO
@@ -117,7 +117,7 @@ steps:
 - name: generate-random-ansatz-params
   config:
     runtime:
-      type: python3
+      language: python3
       imports: [z-quantum-core, qe-openfermion, z-quantum-vqe]
       parameters:
         file: z-quantum-core/tasks/circuit_tasks.py
@@ -156,7 +156,7 @@ steps:
   passed: [transform-hamiltonian, generate-random-ansatz-params]
   config:
     runtime:
-      type: python3
+      language: python3
       imports: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-vqe]
       parameters:
         file:
