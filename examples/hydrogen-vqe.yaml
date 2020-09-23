@@ -2,7 +2,7 @@
 apiVersion: io.orquestra.workflow/1.0.0
 
 # Prefix for workflow ID
-name: vqe-h2-example-
+name: vqe-h2-example
 
 imports:
 - name: z-quantum-core
@@ -174,4 +174,4 @@ types:
   - molecular-geometry
   - hamiltonian-operator
   - ansatz-params
-  - opt
+  - opt-results
