@@ -34,7 +34,7 @@ imports:
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-psi4.git"
-    branch: "dev"
+    branch: "workflow-v1"
 - name: qe-qhipster
   type: git
   parameters:
@@ -48,7 +48,7 @@ steps:
       language: python3
       imports: [diatomic-molecule]
       parameters:
-        file: diatomic-molecule/steps/diatomic_molecule.py
+        file: diatomic-molecule/diatomicmolecule.py
         function: create_diatomic_molecule
     resources:
       cpu: "1000m"
@@ -140,18 +140,6 @@ steps:
   outputs:
     - name: params
       type: ansatz-params
-
-- - name: optimize-variational-circuit
-    template: optimize-variational-circuit
-    arguments:
-      parameters:
-      artifacts:
-      - qubit-operator:
-      - initial-parameters:
-          from: "{{steps.generate-random-ansatz-params.outputs.artifacts.params}}"
-
-
-
 - name: optimize-circuit
   passed: [transform-hamiltonian, generate-random-ansatz-params]
   config:
@@ -159,8 +147,8 @@ steps:
       language: python3
       imports: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-vqe]
       parameters:
-        file:
-        function:
+        file: z-quantum-optimizers/steps/optimizers.py
+        function: optimize_variational_circuit
     resources:
       cpu: "1000m"
       memory: "1Gi"
@@ -179,13 +167,11 @@ steps:
     - initial-parameters: ((generate-random-ansatz-parameters.params))
       type: ansatz-params
   outputs:
-    - name:
-      type: optimization-results
-
-
+    - name: optimization-results
+      type: opt-results
 
 types:
   - molecular-geometry
   - hamiltonian-operator
   - ansatz-params
-  - optimization-results
+  - opt
