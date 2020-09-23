@@ -1,155 +1,191 @@
-ZapOSApiVersion: v1alpha1
-kind: Workflow
+# Workflow API version
+apiVersion: io.orquestra.workflow/1.0.0
 
-resources:
-- name: diatomic-molecule
-  type: git
-  parameters:
-    url: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
-    branch: "master"
+# Prefix for workflow ID
+name: vqe-h2-example-
+
+imports:
 - name: z-quantum-core
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/z-quantum-core.git"
-    branch: "master"
+    branch: "workflow-v1"
 - name: qe-openfermion
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-openfermion.git"
-    branch: "master"
-- name: qe-psi4
-  type: git
-  parameters:
-    url: "git@github.com:zapatacomputing/qe-psi4.git"
-    branch: "master"
+    branch: "v1-revisions"
 - name: z-quantum-vqe
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/z-quantum-vqe.git"
-    branch: "master"
+    branch: "workflow-v1"
 - name: z-quantum-optimizers
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
-    branch: "master"
+    branch: "workflow-v1"
+- name: diatomic-molecule
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
+    branch: "workflow-v1"
+- name: qe-psi4
+  type: git
+  parameters:
+    url: "git@github.com:zapatacomputing/qe-psi4.git"
+    branch: "dev"
 - name: qe-qhipster
   type: git
   parameters:
     url: "git@github.com:zapatacomputing/qe-qhipster.git"
-    branch: "master"
+    branch: "workflow-v1"
 
-
-# Specify the prefix to use when generating names of workflow executions.
-metadata:
-  generateName: h2-example-
-
-# The actual workflow specification
-spec:
-
-  entrypoint: basis-set-loop
-  arguments:
-    parameters:
-    - s3-bucket: quantum-engine
-    - s3-key: projects/examples/hydrogen/data
-    - docker-image: 'z-quantum-default'
-    - docker-tag: 'latest'
-
-  templates:
-
-  - name: basis-set-loop
-    steps:
-    - - name: bond-length-loop
-        template: bond-length-loop
-        arguments:
-          parameters:
-          - basis: '{{item}}' # Note that quotes are needed here because of the curly braces
-        withItems:
-        - STO-3G
-        - 6-31G
-        - 6-311G
-
-  - name: bond-length-loop
-    inputs:
+steps:
+- name: create-molecule
+  config:
+    runtime:
+      language: python3
+      imports: [diatomic-molecule]
       parameters:
-      - name: basis
-    steps:
-    - - name: run-h2
-        template: run-h2
-        arguments:
-          parameters:
-          - basis: '{{inputs.parameters.basis}}'
-          - bond-length: '{{item}}'
-        withItems: [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-
-  - name: run-h2
-    inputs:
+        file: diatomic-molecule/steps/diatomic_molecule.py
+        function: create_diatomic_molecule
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - species1: "H"
+      type: string
+    - species2: "H"
+      type: string
+    - bond-lenght: 0.7
+      type: float
+  outputs:
+    - name: molecule
+      type: molecular-geometry
+- name: run-psi4
+  passed: [create-molecule]
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, qe-openfermion, qe-psi4]
       parameters:
-      - name: basis
-      - name: bond-length
-    steps:
-    - - name: create-molecule
-        template: create-diatomic-molecule
-        arguments:
-          parameters:
-          - species1: H
-          - species2: H
-          - bond-length: '{{inputs.parameters.bond-length}}'
-          - resources: [z-quantum-core, diatomic-molecule]
-          - docker-image: "{{workflow.parameters.docker-image}}"
-          - docker-tag: "{{workflow.parameters.docker-tag}}"
+        file: qe-psi4/steps/psi4.py
+        function: run_psi4_step
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - geometry: ((create-molecule.molecule))
+      type: molecular-geometry
+    - basis: "STO-3G"
+      type: string
+    - method: "scf"
+      type: string
+    - reference: "rhf"
+      type: string
+    - nthreads: 4
+      type: int
+    - save_hamiltonian: True
+      type: bool
+  outputs:
+    - name: hamiltonian
+      type: hamiltonian-operator
+- name: transform-hamiltonian
+  passed: [run-psi4]
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, qe-openfermion]
+      parameters:
+        file: qe-openfermion/steps/transforms.py
+        function: transform_interaction_operator
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - input-op: ((run-psi4.hamiltonian))
+      type: hamiltonian-operator
+    - transformation: "Jordan-Wigner"
+      type: string
+  outputs:
+    - name: hamiltonian
+      type: hamiltonian-operator
+- name: generate-random-ansatz-params
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, qe-openfermion, z-quantum-vqe]
+      parameters:
+        file: z-quantum-core/steps/circuit.py
+        function: generate_random_ansatz_params
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd', 'function_name': 'SingletUCCSDAnsatz', 'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}}, 'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}}, 'transformation': 'Jordan-Wigner'}"
+      type: string
+    - min_value: -0.01
+      type: float
+    - max_value: 0.01
+      type: float
+    - seed: 9
+      type: int
+    - number_of_parameters: "None"
+      type: string
+  outputs:
+    - name: params
+      type: ansatz-params
 
-    - - name: run-psi4
-        template: run-psi4
-        arguments:
-          artifacts:
-          - geometry:
-              from: '{{steps.create-molecule.outputs.artifacts.geometry}}'
-          parameters:
-          - basis: '{{inputs.parameters.basis}}'
-          - method: scf # ccsd(t)
-          - reference: rhf
-          - nthreads: "4"
-          - save-hamiltonian: 'True' # Boolean values must be put in quotes!
-          - resources: [z-quantum-core, qe-openfermion, qe-psi4]
-          - docker-image: qe-psi4
-          - docker-tag: latest
-    - - name: transform-hamiltonian
-        template: transform-interaction-operator
-        arguments:
-          artifacts:
-          - input-op:
-              from: "{{steps.run-psi4.outputs.artifacts.hamiltonian}}"
-          parameters:
-          - transformation: Jordan-Wigner
-          - resources: [z-quantum-core, qe-openfermion]
-          - docker-image: "{{workflow.parameters.docker-image}}"
-          - docker-tag: "{{workflow.parameters.docker-tag}}"
+- - name: optimize-variational-circuit
+    template: optimize-variational-circuit
+    arguments:
+      parameters:
+      artifacts:
+      - qubit-operator:
+      - initial-parameters:
+          from: "{{steps.generate-random-ansatz-params.outputs.artifacts.params}}"
 
-    - - name: generate-random-ansatz-params
-        template: generate-random-ansatz-params
-        arguments:
-          parameters:
-          - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd', 'function_name': 'SingletUCCSDAnsatz', 'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}}, 'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}}, 'transformation': 'Jordan-Wigner'}"
-          - min-val: "-0.01"
-          - max-val: "0.01"
-          - resources: [z-quantum-core, qe-openfermion, z-quantum-vqe]
-          - docker-image: "{{workflow.parameters.docker-image}}"
-          - docker-tag: "{{workflow.parameters.docker-tag}}"
 
-    - - name: optimize-variational-circuit
-        template: optimize-variational-circuit
-        arguments:
-          parameters:
-          - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd', 'function_name': 'SingletUCCSDAnsatz', 'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}}, 'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}}, 'transformation': 'Jordan-Wigner'}"
-          - backend-specs: "{'module_name': 'qeqhipster.simulator', 'function_name': 'QHipsterSimulator'}"
-          - optimizer-specs: "{'module_name': 'zquantum.optimizers.scipy_optimizer', 'function_name': 'ScipyOptimizer', 'method': 'L-BFGS-B'}"
-          - cost-function-specs: "{'module_name': 'zquantum.core.cost_function', 'function_name': 'AnsatzBasedCostFunction', 'estimator-specs': { 'module_name': 'zquantum.core.estimator', 'function_name': 'ExactEstimator'}}"
-          - resources: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-vqe]
-          - docker-image: qe-qhipster
-          - docker-tag: latest
-          - memory: 2048Mi
-          artifacts:
-          - qubit-operator:
-              from: "{{steps.transform-hamiltonian.outputs.artifacts.transformed-op}}"
-          - initial-parameters:
-              from: "{{steps.generate-random-ansatz-params.outputs.artifacts.params}}"
+
+- name: optimize-circuit
+  passed: [transform-hamiltonian, generate-random-ansatz-params]
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-qhipster, z-quantum-vqe]
+      parameters:
+        file:
+        function:
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - ansatz-specs: "{'module_name': 'zquantum.vqe.singlet_uccsd', 'function_name': 'SingletUCCSDAnsatz', 'number_of_spatial_orbitals': {{steps.run-psi4.outputs.parameters.n-mo}}, 'number_of_alpha_electrons': {{steps.run-psi4.outputs.parameters.n-alpha}}, 'transformation': 'Jordan-Wigner'}"
+      type: string
+    - backend-specs: "{'module_name': 'qeqhipster.simulator', 'function_name': 'QHipsterSimulator'}"
+      type: string
+    - optimizer-specs: "{'module_name': 'zquantum.optimizers.scipy_optimizer', 'function_name': 'ScipyOptimizer', 'method': 'L-BFGS-B'}"
+      type: string
+    - cost-function-specs: "{'module_name': 'zquantum.core.cost_function', 'function_name': 'AnsatzBasedCostFunction', 'estimator-specs': { 'module_name': 'zquantum.core.estimator', 'function_name': 'ExactEstimator'}}"
+      type: string
+    - qubit-operator: ((transform-hamiltonian.hamiltonian))
+      type: hamiltonian-operator
+    - initial-parameters: ((generate-random-ansatz-parameters.params))
+      type: ansatz-params
+  outputs:
+    - name:
+      type: optimization-results
+
+
+
+types:
+  - molecular-geometry
+  - hamiltonian-operator
+  - ansatz-params
+  - optimization-results
