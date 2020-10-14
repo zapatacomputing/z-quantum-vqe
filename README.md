@@ -2,7 +2,7 @@
 
 ## What is it?
 
-`z-quantum-vqe` is a module with basic implementation of Variational Quantum Eigensolver (VQE) to be used with [Orquestra](https://www.zapatacomputing.com/orquestra/) – a platform for performing computations on quantum computers developed by [Zapata Computing](https://www.zapatacomputing.com).
+`z-quantum-vqe` is a module with basic implementation of Variational Quantum Eigensolver (VQE) to be used with [Orquestra](https://www.orquestra.io) – a platform for performing computations on quantum computers developed by [Zapata Computing](https://www.zapatacomputing.com).
 
 ## Usage
 
