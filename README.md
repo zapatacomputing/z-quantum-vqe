@@ -2,35 +2,32 @@
 
 ## What is it?
 
-`z-quantum-vqe` is a basic implementation of Variational Quantum Eigensolver (VQE) to be used with [Orquestra](https://www.zapatacomputing.com/orquestra/) – a platform for performing computations on quantum computers developed by [Zapata Computing](https://www.zapatacomputing.com).
+`z-quantum-vqe` is a module with basic implementation of Variational Quantum Eigensolver (VQE) to be used with [Orquestra](https://www.orquestra.io) – a platform for performing computations on quantum computers developed by [Zapata Computing](https://www.zapatacomputing.com).
 
 ## Usage
 
 ### Workflow
-In order to use `z-quantum-vqe` in your workflow, you need to add it as a resource:
+In order to use `z-quantum-vqe` in your workflow, you need to add it as an `import` in your Orquestra workflow:
 
 ```yaml
-resources:
+imports:
 - name: z-quantum-vqe
   type: git
   parameters:
-    url: "git@github.com:zapatacomputing/z-quantum-vqe.git"
+    repository: "git@github.com:zapatacomputing/z-quantum-vqe.git"
     branch: "master"
 ```
 
-and then import in a specific step:
+and then add it in the `imports` argument of your `step`:
 
 ```yaml
-- - name: my-task
-    template: template-1
-    arguments:
-      parameters:
-      - param_1: 1
-      - resources: [z-quantum-vqe]
+- name: my-step
+  config:
+    runtime: python3
+    imports: [z-quantum-vqe]
 ```
 
 Once that is done you can:
-- use any template from `templates/` directory
 - use tasks which import `zquantum.vqe` in the python code (see below).
 
 ### Python
@@ -58,4 +55,3 @@ You can find the development guidelines in the [`z-quantum-core` repository](htt
 ### Running tests
 
 In order to run tests please run `pytest .` from the main directory.
-
