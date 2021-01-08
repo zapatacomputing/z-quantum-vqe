@@ -103,8 +103,8 @@ steps:
       type: bool
     - nthreads: 4
       type: int
-    - n_active: "None"
-      type: string
+    - save_rdms: False
+      type: bool
     - options: "None"
       type: string
     - wavefunction: "None"
@@ -146,8 +146,13 @@ steps:
       memory: "1Gi"
       disk: "10Gi"
   inputs:
-    - ansatz_specs: '{"module_name": "zquantum.vqe.singlet_uccsd", "function_name": "SingletUCCSDAnsatz", "number_of_spatial_orbitals": 2, "number_of_alpha_electrons": 1, "transformation": "Jordan-Wigner"}'
-      type: string
+    - ansatz_specs:
+        module_name: zquantum.vqe.singlet_uccsd
+        function_name: SingletUCCSDAnsatz
+        number_of_spatial_orbitals: 2
+        number_of_alpha_electrons: 1
+        transformation: Jordan-Wigner
+      type: specs
     - min_value: -0.01
       type: float
     - max_value: 0.01
@@ -173,14 +178,30 @@ steps:
       memory: "1Gi"
       disk: "10Gi"
   inputs:
-    - ansatz_specs: '{"module_name": "zquantum.vqe.singlet_uccsd", "function_name": "SingletUCCSDAnsatz", "number_of_spatial_orbitals": 2, "number_of_alpha_electrons": 1, "transformation": "Jordan-Wigner"}'
-      type: string
-    - backend_specs: '{"module_name": "qeforest.simulator", "function_name": "ForestSimulator", "device_name": "wavefunction-simulator"}'
-      type: string
-    - optimizer_specs: '{"module_name": "zquantum.optimizers.scipy_optimizer", "function_name": "ScipyOptimizer", "method": "L-BFGS-B"}'
-      type: string
-    - cost_function_specs: '{"module_name": "zquantum.core.cost_function", "function_name": "AnsatzBasedCostFunction", "estimator-specs": { "module_name": "zquantum.core.estimator", "function_name": "ExactEstimator"}}'
-      type: string
+    - ansatz_specs:
+        module_name: zquantum.vqe.singlet_uccsd
+        function_name: SingletUCCSDAnsatz
+        number_of_spatial_orbitals: 2
+        number_of_alpha_electrons: 1
+        transformation: Jordan-Wigner
+      type: specs
+    - backend_specs:
+        module_name: qeforest.simulator
+        function_name: ForestSimulator
+        device_name: wavefunction-simulator
+      type: specs
+    - optimizer_specs:
+        module_name: zquantum.optimizers.scipy_optimizer
+        function_name: ScipyOptimizer
+        method: L-BFGS-B
+      type: specs
+    - cost_function_specs:
+        module_name: zquantum.core.cost_function
+        function_name: AnsatzBasedCostFunction
+        estimator-specs:
+          module_name: zquantum.core.estimator
+          function_name: ExactEstimator
+      type: specs
     - qubit_operator: ((transform-hamiltonian.transformed-operator))
       type: qubit-operator
     - initial_parameters: ((generate-random-ansatz-params.params))
@@ -207,3 +228,4 @@ types:
   - qubit-operator
   - ansatz-params
   - opt-results
+  - specs
