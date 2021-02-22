@@ -10,11 +10,6 @@ imports:
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-core.git"
     branch: "master"
-- name: qe-openfermion
-  type: git
-  parameters:
-    repository: "git@github.com:zapatacomputing/qe-openfermion.git"
-    branch: "master"
 - name: z-quantum-vqe
   type: git
   parameters:
@@ -70,7 +65,7 @@ steps:
     runtime:
       language: psi4
       customImage: "zapatacomputing/qe-psi4"
-      imports: [z-quantum-core, qe-openfermion, qe-psi4]
+      imports: [z-quantum-core, qe-psi4]
       parameters:
         file: qe-psi4/steps/run_psi4_calculations.py
         function: run_psi4
@@ -117,9 +112,9 @@ steps:
   config:
     runtime:
       language: python3
-      imports: [z-quantum-core, qe-openfermion]
+      imports: [z-quantum-core]
       parameters:
-        file: qe-openfermion/steps/transforms.py
+        file: z-quantum-core/steps/transforms.py
         function: transform_interaction_operator
     resources:
       cpu: "1000m"
@@ -137,7 +132,7 @@ steps:
   config:
     runtime:
       language: python3
-      imports: [z-quantum-core, qe-openfermion, z-quantum-vqe]
+      imports: [z-quantum-core, z-quantum-vqe]
       parameters:
         file: z-quantum-core/steps/circuit.py
         function: generate_random_ansatz_params
@@ -159,8 +154,6 @@ steps:
       type: float
     - seed: 9
       type: int
-    - number_of_parameters: "None"
-      type: string
   outputs:
     - name: params
       type: ansatz-params
@@ -169,7 +162,7 @@ steps:
   config:
     runtime:
       language: python3
-      imports: [z-quantum-core, qe-openfermion, z-quantum-optimizers, qe-forest, z-quantum-vqe]
+      imports: [z-quantum-core, z-quantum-optimizers, qe-forest, z-quantum-vqe]
       parameters:
         file: z-quantum-optimizers/steps/optimizers.py
         function: optimize_variational_circuit
@@ -206,16 +199,6 @@ steps:
       type: qubit-operator
     - initial_parameters: ((generate-random-ansatz-params.params))
       type: ansatz-params
-    - noise_model: "None"
-      type: string
-    - device_connectivity: "None"
-      type: string
-    - parameter_grid: "None"
-      type: string
-    - constraint_operator: "None"
-      type: string
-    - fixed_parameters: "None"
-      type: string
   outputs:
     - name: optimization-results
       type: opt-results
