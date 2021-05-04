@@ -1,0 +1,222 @@
+# Workflow API version
+apiVersion: io.orquestra.workflow/1.0.0
+
+# Prefix for workflow ID
+name: vqe-h2-example
+
+imports:
+- name: z-quantum-core
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/z-quantum-core.git"
+    branch: "dev"
+- name: z-quantum-vqe
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/z-quantum-vqe.git"
+    branch: "dev"
+- name: z-quantum-optimizers
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
+    branch: "dev"
+- name: diatomic-molecule
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
+    branch: "master"
+- name: qe-psi4
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/qe-psi4.git"
+    branch: "master"
+- name: qe-qulacs
+  type: git
+  parameters:
+    repository: "git@github.com:zapatacomputing/qe-qulacs.git"
+    branch: "master"
+
+steps:
+- name: create-molecule
+  config:
+    runtime:
+      language: python3
+      imports: [diatomic-molecule]
+      parameters:
+        file: diatomic-molecule/diatomicmolecule.py
+        function: create_diatomic_molecule
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - species1: "H"
+      type: string
+    - species2: "H"
+      type: string
+    - bond_length: 0.7
+      type: float
+  outputs:
+    - name: molecule
+      type: molecular-geometry
+- name: run-psi4
+  passed: [create-molecule]
+  config:
+    runtime:
+      language: psi4
+      customImage: "zapatacomputing/qe-psi4"
+      imports: [z-quantum-core, qe-psi4]
+      parameters:
+        file: qe-psi4/steps/run_psi4_calculations.py
+        function: run_psi4
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - basis: "STO-3G"
+      type: string
+    - method: "scf"
+      type: string
+    - reference: "rhf"
+      type: string
+    - geometry: ((create-molecule.molecule))
+      type: molecular-geometry
+    - freeze_core: False
+      type: bool
+    - charge: 0
+      type: int
+    - multiplicity: 1
+      type: int
+    - save_hamiltonian: True
+      type: bool
+    - n_active_extract: "None"
+      type: string
+    - n_occupied_extract: "None"
+      type: string
+    - freeze_core_extract: False
+      type: bool
+    - nthreads: 4
+      type: int
+    - save_rdms: False
+      type: bool
+    - options: "None"
+      type: string
+    - wavefunction: "None"
+      type: string
+  outputs:
+    - name: hamiltonian
+      type: hamiltonian
+- name: transform-hamiltonian
+  passed: [run-psi4]
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core]
+      parameters:
+        file: z-quantum-core/steps/transforms.py
+        function: transform_interaction_operator
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - transformation: "Jordan-Wigner"
+      type: string
+    - input_operator: ((run-psi4.hamiltonian))
+      type: hamiltonian
+  outputs:
+    - name: transformed-operator
+      type: qubit-operator
+
+- name: generate-random-ansatz-params
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, z-quantum-vqe]
+      parameters:
+        file: z-quantum-core/steps/circuit.py
+        function: generate_random_ansatz_params
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - ansatz_specs:
+        module_name: zquantum.vqe.singlet_uccsd
+        function_name: SingletUCCSDAnsatz
+        number_of_spatial_orbitals: 2
+        number_of_alpha_electrons: 1
+        transformation: Jordan-Wigner
+      type: specs
+    - min_value: -0.01
+      type: float
+    - max_value: 0.01
+      type: float
+    - seed: 9
+      type: int
+  outputs:
+    - name: params
+      type: ansatz-params
+
+- name: optimize-circuit
+  passed: [transform-hamiltonian, generate-random-ansatz-params]
+  config:
+    runtime:
+      language: python3
+      imports: [z-quantum-core, z-quantum-optimizers, qe-qulacs, z-quantum-vqe]
+      parameters:
+        file: z-quantum-core/steps/wip/optimize.py
+        function: optimize_ansatz_based_cost_function
+    resources:
+      cpu: "1000m"
+      memory: "1Gi"
+      disk: "10Gi"
+  inputs:
+    - ansatz_specs:
+        module_name: zquantum.vqe.singlet_uccsd
+        function_name: SingletUCCSDAnsatz
+        number_of_spatial_orbitals: 2
+        number_of_alpha_electrons: 1
+        transformation: Jordan-Wigner
+      type: specs
+    - backend_specs:
+        module_name: qequlacs.simulator
+        function_name: QulacsSimulator
+      type: specs
+    - optimizer_specs:
+        module_name: zquantum.optimizers.scipy_optimizer
+        function_name: ScipyOptimizer
+        method: L-BFGS-B
+      type: specs
+    - estimation_method_specs:
+        module_name: zquantum.core.wip.estimators.estimation
+        function_name: estimate_expectation_values_by_averaging
+      type: specs
+    ### Optional prepocessing of the estimation tasks, such as grouping or shot allocation
+    # - estimation_preprocessors_specs:
+    #   - grouping: # This string is just for syntax and informative purposes
+    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     function_name: group_individually
+    #   - shot_allocation: # This string is just for syntax and informative purposes
+    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     function_name: allocate_shots_uniformly
+    #     number_of_shots: 10000
+    #   type: specs
+    - target_operator: ((transform-hamiltonian.transformed-operator))
+      type: qubit-operator
+    - initial_parameters: ((generate-random-ansatz-params.params))
+      type: ansatz-params
+  outputs:
+    - name: optimization-results
+      type: opt-results
+    - name: optimized-parameters
+      type: ansatz-params
+
+types:
+  - molecular-geometry
+  - hamiltonian
+  - qubit-operator
+  - ansatz-params
+  - opt-results
+  - specs
