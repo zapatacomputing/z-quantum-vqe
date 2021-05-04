@@ -193,15 +193,16 @@ steps:
         module_name: zquantum.core.wip.estimators.estimation
         function_name: estimate_expectation_values_by_averaging
       type: specs
-    - estimation_preprocessors_specs:
-      - grouping: # This string is just for syntax and informative purposes
-        module_name: zquantum.core.wip.estimators.estimation 
-        function_name: group_individually
-      - shot_allocation: # This string is just for syntax and informative purposes
-        module_name: zquantum.core.wip.estimators.estimation 
-        function_name: allocate_shots_uniformly
-        number_of_shots: 10000
-      type: specs
+    ### Optional prepocessing of the estimation tasks, such as grouping or shot allocation
+    # - estimation_preprocessors_specs:
+    #   - grouping: # This string is just for syntax and informative purposes
+    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     function_name: group_individually
+    #   - shot_allocation: # This string is just for syntax and informative purposes
+    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     function_name: allocate_shots_uniformly
+    #     number_of_shots: 10000
+    #   type: specs
     - target_operator: ((transform-hamiltonian.transformed-operator))
       type: qubit-operator
     - initial_parameters: ((generate-random-ansatz-params.params))
