@@ -197,7 +197,7 @@ steps:
     - estimation_preprocessors_specs:
       - grouping: # This string is just for syntax and informative purposes
         module_name: zquantum.core.estimation 
-        function_name: group_individually
+        function_name: group_greedily_with_context_selection
       - shot_allocation: # This string is just for syntax and informative purposes
         module_name: zquantum.core.estimation 
         function_name: allocate_shots_uniformly
