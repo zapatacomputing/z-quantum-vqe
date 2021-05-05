@@ -30,10 +30,10 @@ imports:
   parameters:
     repository: "git@github.com:zapatacomputing/qe-psi4.git"
     branch: "master"
-- name: qe-qulacs
+- name: qe-forest
   type: git
   parameters:
-    repository: "git@github.com:zapatacomputing/qe-qulacs.git"
+    repository: "git@github.com:zapatacomputing/qe-forest.git"
     branch: "master"
 
 steps:
@@ -164,9 +164,9 @@ steps:
   config:
     runtime:
       language: python3
-      imports: [z-quantum-core, z-quantum-optimizers, qe-qulacs, z-quantum-vqe]
+      imports: [z-quantum-core, z-quantum-optimizers, qe-forest, z-quantum-vqe]
       parameters:
-        file: z-quantum-core/steps/wip/optimize.py
+        file: z-quantum-core/steps/optimize.py
         function: optimize_ansatz_based_cost_function
     resources:
       cpu: "1000m"
@@ -181,7 +181,7 @@ steps:
         transformation: Jordan-Wigner
       type: specs
     - backend_specs:
-        module_name: qequlacs.simulator
+        module_name: qeforest.simulator
         function_name: QulacsSimulator
       type: specs
     - optimizer_specs:
@@ -190,16 +190,16 @@ steps:
         method: L-BFGS-B
       type: specs
     - estimation_method_specs:
-        module_name: zquantum.core.wip.estimators.estimation
+        module_name: zquantum.core.estimation
         function_name: estimate_expectation_values_by_averaging
       type: specs
     ### Optional prepocessing of the estimation tasks, such as grouping or shot allocation
     # - estimation_preprocessors_specs:
     #   - grouping: # This string is just for syntax and informative purposes
-    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     module_name: zquantum.core.estimation 
     #     function_name: group_individually
     #   - shot_allocation: # This string is just for syntax and informative purposes
-    #     module_name: zquantum.core.wip.estimators.estimation 
+    #     module_name: zquantum.core.estimation 
     #     function_name: allocate_shots_uniformly
     #     number_of_shots: 10000
     #   type: specs
