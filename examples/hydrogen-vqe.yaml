@@ -9,32 +9,32 @@ imports:
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-core.git"
-    branch: "master"
+    branch: "dev"
 - name: z-quantum-vqe
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-vqe.git"
-    branch: "master"
+    branch: "dev"
 - name: z-quantum-optimizers
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
-    branch: "master"
+    branch: "dev"
 - name: diatomic-molecule
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
-    branch: "master"
+    branch: "dev"
 - name: qe-psi4
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/qe-psi4.git"
-    branch: "master"
+    branch: "dev"
 - name: qe-forest
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/qe-forest.git"
-    branch: "master"
+    branch: "dev"
 
 steps:
 - name: create-molecule
@@ -195,11 +195,9 @@ steps:
         function_name: estimate_expectation_values_by_averaging
       type: specs
     - estimation_preprocessors_specs:
-      - grouping: # This string is just for syntax and informative purposes
-        module_name: zquantum.core.estimation 
+      - module_name: zquantum.core.estimation 
         function_name: group_greedily_with_context_selection
-      - shot_allocation: # This string is just for syntax and informative purposes
-        module_name: zquantum.core.estimation 
+      - module_name: zquantum.core.estimation 
         function_name: allocate_shots_uniformly
         number_of_shots: 10000
       type: specs
