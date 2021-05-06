@@ -9,32 +9,32 @@ imports:
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-core.git"
-    branch: "dev"
+    branch: "master"
 - name: z-quantum-vqe
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-vqe.git"
-    branch: "dev"
+    branch: "master"
 - name: z-quantum-optimizers
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-optimizers.git"
-    branch: "dev"
+    branch: "master"
 - name: diatomic-molecule
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/tutorial-1-diatomic-molecule.git"
-    branch: "dev"
+    branch: "master"
 - name: qe-psi4
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/qe-psi4.git"
-    branch: "dev"
+    branch: "master"
 - name: qe-forest
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/qe-forest.git"
-    branch: "dev"
+    branch: "master"
 
 steps:
 - name: create-molecule
