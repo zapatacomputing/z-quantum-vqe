@@ -1,5 +1,7 @@
 # z-quantum-vqe
 
+[![codecov](https://codecov.io/gh/zapatacomputing/z-quantum-vqe/branch/master/graph/badge.svg?token=XCYDQSBK9V)](https://codecov.io/gh/zapatacomputing/z-quantum-vqe)
+
 ## What is it?
 
 `z-quantum-vqe` is a module with basic implementation of Variational Quantum Eigensolver (VQE) to be used with [Orquestra](https://www.orquestra.io) – a platform for performing computations on quantum computers developed by [Zapata Computing](https://www.zapatacomputing.com).
