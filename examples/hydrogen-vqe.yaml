@@ -63,7 +63,7 @@ steps:
   passed: [create-molecule]
   config:
     runtime:
-      language: psi4
+      language: python3
       customImage: "zapatacomputing/qe-psi4"
       imports: [z-quantum-core, qe-psi4]
       parameters:
