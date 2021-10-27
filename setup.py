@@ -1,12 +1,11 @@
 import setuptools
+import warnings
 
 try:
     from subtrees.z_quantum_actions.setup_extras import extras
 except ImportError:
-    print("Unable to import extras")
+    warnings.warn("Unable to import extras")
     extras = {}
-else:
-    print("Imported subtrees/z_quantum_actions/setup_extras.extras")
 
 with open("README.md", "r") as f:
     long_description = f.read()
