@@ -1,6 +1,6 @@
 # z-quantum-vqe
 
-[![codecov](https://codecov.io/gh/zapatacomputing/z-quantum-vqe/branch/master/graph/badge.svg?token=XCYDQSBK9V)](https://codecov.io/gh/zapatacomputing/z-quantum-vqe)
+[![codecov](https://codecov.io/gh/zapatacomputing/z-quantum-vqe/branch/main/graph/badge.svg?token=XCYDQSBK9V)](https://codecov.io/gh/zapatacomputing/z-quantum-vqe)
 
 ## What is it?
 
@@ -17,7 +17,7 @@ imports:
   type: git
   parameters:
     repository: "git@github.com:zapatacomputing/z-quantum-vqe.git"
-    branch: "master"
+    branch: "main"
 ```
 
 and then add it in the `imports` argument of your `step`:
