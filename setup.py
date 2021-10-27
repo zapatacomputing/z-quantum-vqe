@@ -1,7 +1,16 @@
 import setuptools
 
+try:
+    from subtrees.z_quantum_actions.setup_extras import extras
+except ImportError:
+    print("Unable to import extras")
+    extras = {}
+else:
+    print("Imported subtrees/z_quantum_actions/setup_extras.extras")
+
 with open("README.md", "r") as f:
     long_description = f.read()
+
 
 setuptools.setup(
     name="z-quantum-vqe",
@@ -22,4 +31,5 @@ setuptools.setup(
     ],
     setup_requires=["setuptools_scm~=6.0"],
     install_requires=["z-quantum-core", "openfermion>=1.0.0"],
+    extras_require=extras,
 )
