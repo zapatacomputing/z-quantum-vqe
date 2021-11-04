@@ -1,0 +1,42 @@
+name: style
+
+# Trigger on push
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      # ------------------------------------------------------------------------
+      # Only use ssh when a second private repo needs to be installed....
+      # The current repo MUST have a secrets.SSH_PRIVATE_KEY defined in github.
+      # ------------------------------------------------------------------------
+      # - uses: ./subtrees/z_quantum_actions/actions/ssh_setup
+      #   with:
+      #     ssh_key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Get z-quantum-core
+        uses: actions/checkout@v2
+        with:
+          repository: zapatacomputing/z-quantum-core
+          path: z-quantum-core
+
+      - name: Install z-quantum-core
+        run: |
+          python3 -m pip install --user ./z-quantum-core
+
+
+      # Pull in the style includes
+      - uses: ./subtrees/z_quantum_actions/actions/style
