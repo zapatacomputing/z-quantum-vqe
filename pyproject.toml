@@ -21,6 +21,13 @@ explicit_package_bases = true
 mypy_path = "src:src/python"
 exclude = ['examples/*',]
 
+[[tool.mypy.overrides]]
+module = [
+    'sympy.*',
+    'openfermion.*',
+    'overrides.*',
+]
+ignore_missing_imports = true
 [tool.coverage.run]
 # main.py should be checked separately in an integration test.
 omit = ["*/main.py", "*/__init__.py"]
