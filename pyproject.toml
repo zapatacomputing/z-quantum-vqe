@@ -24,7 +24,6 @@ exclude = ['examples/*',]
 [[tool.mypy.overrides]]
 module = [
     'sympy.*',
-    'openfermion.*',
     'overrides.*',
 ]
 ignore_missing_imports = true
